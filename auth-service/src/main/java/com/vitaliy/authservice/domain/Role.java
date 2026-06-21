@@ -1,4 +1,7 @@
 package com.vitaliy.authservice.domain;
 
-public class Role {
+public enum Role {
+    USER,
+    MANAGER,
+    ADMIN
 }

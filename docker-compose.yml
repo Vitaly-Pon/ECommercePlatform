@@ -6,9 +6,8 @@ services:
     image: postgres:15
     container_name: postgres
     environment:
-      POSTGRES_USER: ${DB_USERNAME:-admin}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-admin123}
-      POSTGRES_DB: ecommerce
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
       - "5433:5432"               # внешний порт, чтобы не конфликтовать с локальным PostgreSQL
     volumes:
@@ -58,7 +57,8 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     networks:
       - ecom-net
@@ -69,7 +69,7 @@ services:
     depends_on:
       - kafka
     ports:
-      - "8081:8081"
+      - "8088:8081"
     environment:
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:9092
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
@@ -78,20 +78,40 @@ services:
       - ecom-net
 
   # ========== МИКРОСЕРВИСЫ ==========
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      # Передаем хосты и порты раздельно, как требует ваш properties:
+      AUTH_SERVICE_HOST: auth-service
+      AUTH_SERVICE_PORT: 8081
+      PRODUCT_SERVICE_HOST: product-service
+      PRODUCT_SERVICE_PORT: 8083
+      # Остальные сервисы (добавьте по аналогии, когда пропишете их в свойства шлюза):
+      USER_SERVICE_HOST: user-service
+      USER_SERVICE_PORT: 8082
+    networks:
+      - ecom-net
+
   auth-service:
     build:
       context: ./auth-service
       dockerfile: Dockerfile
     container_name: auth-service
     ports:
-      - "8081:8081"               # внешний порт, можно изменить
+      - "8091:8081"
     environment:
       SPRING_PROFILES_ACTIVE: docker
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: auth_db
-      DB_USERNAME: ${DB_USERNAME:-admin}
-      DB_PASSWORD: ${DB_PASSWORD:-admin123}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
@@ -110,14 +130,14 @@ services:
       dockerfile: Dockerfile
     container_name: user-service
     ports:
-      - "8082:8082"
+      - "8092:8082"
     environment:
       SPRING_PROFILES_ACTIVE: docker
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: user_db
-      DB_USERNAME: ${DB_USERNAME:-admin}
-      DB_PASSWORD: ${DB_PASSWORD:-admin123}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SCHEMA_REGISTRY_URL: http://schema-registry:8081
     depends_on:
@@ -133,12 +153,12 @@ services:
       dockerfile: Dockerfile
     container_name: product-service
     ports:
-      - "8083:8083"
+      - "8093:8083"
     environment:
       SPRING_PROFILES_ACTIVE: docker
       MONGO_HOST: mongodb
       MONGO_PORT: 27017
-      MONGO_DATABASE: productdb
+      MONGO_DATABASE: product_db
       MONGO_USERNAME: ${MONGO_USER:-admin}
       MONGO_PASSWORD: ${MONGO_PASSWORD:-admin123}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
@@ -156,14 +176,14 @@ services:
       dockerfile: Dockerfile
     container_name: inventory-service
     ports:
-      - "8084:8084"
+      - "8094:8084"
     environment:
       SPRING_PROFILES_ACTIVE: docker
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: inventory_db
-      DB_USERNAME: ${DB_USERNAME:-admin}
-      DB_PASSWORD: ${DB_PASSWORD:-admin123}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SCHEMA_REGISTRY_URL: http://schema-registry:8081
     depends_on:
@@ -179,14 +199,14 @@ services:
       dockerfile: Dockerfile
     container_name: order-service
     ports:
-      - "8085:8085"
+      - "8095:8085"
     environment:
       SPRING_PROFILES_ACTIVE: docker
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: order_db
-      DB_USERNAME: ${DB_USERNAME:-admin}
-      DB_PASSWORD: ${DB_PASSWORD:-admin123}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SCHEMA_REGISTRY_URL: http://schema-registry:8081
       INVENTORY_SERVICE_GRPC_HOST: inventory-service
@@ -205,12 +225,12 @@ services:
       dockerfile: Dockerfile
     container_name: notification-service
     ports:
-      - "8086:8086"
+      - "8096:8086"
     environment:
       SPRING_PROFILES_ACTIVE: docker
       MONGO_HOST: mongodb
       MONGO_PORT: 27017
-      MONGO_DATABASE: notificationdb
+      MONGO_DATABASE: notification_db
       MONGO_USERNAME: ${MONGO_USER:-admin}
       MONGO_PASSWORD: ${MONGO_PASSWORD:-admin123}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
@@ -219,32 +239,6 @@ services:
       - mongodb
       - kafka
       - schema-registry
-    networks:
-      - ecom-net
-
-  api-gateway:
-    build:
-      context: ./api-gateway
-      dockerfile: Dockerfile
-    container_name: api-gateway
-    ports:
-      - "8080:8080"               # основной вход для клиентов
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      AUTH_SERVICE_URL: http://auth-service:8081
-      USER_SERVICE_URL: http://user-service:8082
-      PRODUCT_SERVICE_URL: http://product-service:8083
-      INVENTORY_SERVICE_URL: http://inventory-service:8084
-      ORDER_SERVICE_URL: http://order-service:8085
-      NOTIFICATION_SERVICE_URL: http://notification-service:8086
-      # Если используете gRPC, добавьте соответствующие адреса
-    depends_on:
-      - auth-service
-      - user-service
-      - product-service
-      - inventory-service
-      - order-service
-      - notification-service
     networks:
       - ecom-net
 
