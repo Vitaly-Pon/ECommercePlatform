@@ -22,12 +22,12 @@ public class JwtService {
 
     public String generateToken(User user) {
         return Jwts.builder()
-                .subject(user.getEmail()) // 🟢 Новый синтаксис (без set)
+                .subject(user.getEmail())
                 .claim("userId", user.getId())
                 .claim("role", user.getRole().name())
-                .issuedAt(new Date()) // 🟢 Новый синтаксис (без set)
-                .expiration(new Date(System.currentTimeMillis() + expiration)) // 🟢 Новый синтаксис (без set)
-                .signWith(getKey()) // 🟢 Использует SecretKey
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(getKey())
                 .compact();
     }
 
@@ -54,11 +54,11 @@ public class JwtService {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parser() // 🟢 Новый синтаксис для 0.13.0
-                .verifyWith(getKey()) // 🟢 Вместо setSigningKey
+        return Jwts.parser()
+                .verifyWith(getKey())
                 .build()
-                .parseSignedClaims(token) // 🟢 Вместо parseClaimsJws
-                .getPayload(); // 🟢 Вместо getBody
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     private SecretKey getKey() { // 🟢 Возвращает SecretKey вместо Key

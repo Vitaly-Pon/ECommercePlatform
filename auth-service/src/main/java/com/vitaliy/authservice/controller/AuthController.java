@@ -1,6 +1,7 @@
 package com.vitaliy.authservice.controller;
 
 import com.vitaliy.authservice.dto.request.LoginRequest;
+import com.vitaliy.authservice.dto.request.RefreshRequest;
 import com.vitaliy.authservice.dto.request.RegisterRequest;
 import com.vitaliy.authservice.dto.response.AuthResponse;
 import com.vitaliy.authservice.dto.response.UserResponse;
@@ -26,5 +27,14 @@ public class AuthController {
     @PostMapping("/login")
     public AuthResponse login(@RequestBody LoginRequest request) {
         return authService.login(request);
+    }
+
+    @PostMapping("/refresh")
+    public AuthResponse refresh(@RequestBody RefreshRequest request) {
+        return authService.refresh(request.getRefreshToken());
+    }
+    @PostMapping("/logout")
+    public void logout(@RequestBody RefreshRequest request) {
+        authService.logout(request.getRefreshToken());
     }
 }
