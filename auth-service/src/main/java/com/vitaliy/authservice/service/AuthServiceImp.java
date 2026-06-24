@@ -40,7 +40,7 @@ public class AuthServiceImp implements AuthService{
 
         User saved = userRepository.save(user);
 
-        return new UserResponse(saved.getId(), saved.getEmail());
+        return new UserResponse(saved.getId(), saved.getEmail(), saved.getRole().name());
     }
 
     @Override
@@ -59,9 +59,13 @@ public class AuthServiceImp implements AuthService{
         return new AuthResponse(
                 accessToken,
                 refreshToken.getToken(),
-                user.getId(),
-                user.getEmail(),
-                user.getRole().name()
+                "Bearer",
+                jwtService.getExpirationMillis(),
+                new UserResponse(
+                        user.getId(),
+                        user.getEmail(),
+                        user.getRole().name()
+                )
         );
     }
 
@@ -98,9 +102,13 @@ public class AuthServiceImp implements AuthService{
         return new AuthResponse(
                 newAccessToken,
                 refreshToken.getToken(),
-                user.getId(),
-                user.getEmail(),
-                user.getRole().name()
+                "Bearer",
+                jwtService.getExpirationMillis(),
+                new UserResponse(
+                        user.getId(),
+                        user.getEmail(),
+                        user.getRole().name()
+                )
         );
     }
 
