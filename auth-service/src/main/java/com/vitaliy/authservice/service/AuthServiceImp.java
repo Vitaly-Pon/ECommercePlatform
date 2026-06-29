@@ -12,6 +12,7 @@ import com.vitaliy.authservice.repository.UserRepository;
 import com.vitaliy.authservice.config.security.JwtService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthServiceImp implements AuthService{
@@ -44,6 +45,7 @@ public class AuthServiceImp implements AuthService{
     }
 
     @Override
+    @Transactional
     public AuthResponse login(LoginRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail())
@@ -73,7 +75,8 @@ public class AuthServiceImp implements AuthService{
         return java.util.UUID.randomUUID().toString();
     }
 
-    private RefreshToken createRefreshToken(User user) {
+    @Transactional
+    public RefreshToken createRefreshToken(User user) {
 
         refreshTokenRepository.deleteByUser(user);
 
@@ -86,6 +89,7 @@ public class AuthServiceImp implements AuthService{
     }
 
     @Override
+    @Transactional
     public AuthResponse refresh(String refreshTokenValue) {
 
         RefreshToken refreshToken = refreshTokenRepository.findByToken(refreshTokenValue)
@@ -113,6 +117,7 @@ public class AuthServiceImp implements AuthService{
     }
 
     @Override
+    @Transactional
     public void logout(String refreshTokenValue) {
 
         RefreshToken token = refreshTokenRepository.findByToken(refreshTokenValue)
@@ -120,5 +125,4 @@ public class AuthServiceImp implements AuthService{
 
         refreshTokenRepository.delete(token);
     }
-
 }
