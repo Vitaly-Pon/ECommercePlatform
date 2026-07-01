@@ -1,4 +1,4 @@
-package com.vitaliy.productservice.ProductRepository;
+package com.vitaliy.productservice.repository;
 
 import com.vitaliy.productservice.domain.Product;
 import org.springframework.data.mongodb.repository.MongoRepository;

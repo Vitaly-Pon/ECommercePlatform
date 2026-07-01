@@ -1,6 +1,6 @@
 package com.vitaliy.productservice.service;
 
-import com.vitaliy.productservice.ProductRepository.ProductRepository;
+import com.vitaliy.productservice.repository.ProductRepository;
 import com.vitaliy.productservice.domain.Product;
 import com.vitaliy.productservice.dto.ProductRequest;
 import com.vitaliy.productservice.dto.ProductResponse;
