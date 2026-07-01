@@ -1,0 +1,8 @@
+spring.datasource.url=jdbc:tc:postgresql:15:///testdb
+spring.datasource.username=test
+spring.datasource.password=test
+spring.jpa.hibernate.ddl-auto=create-drop
+
+jwt.expiration=3600000
+jwt.private-key=classpath:keys/private.key
+jwt.public-key=classpath:keys/public.key

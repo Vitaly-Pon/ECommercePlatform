@@ -6,6 +6,7 @@ import com.vitaliy.authservice.dto.request.RegisterRequest;
 import com.vitaliy.authservice.dto.response.AuthResponse;
 import com.vitaliy.authservice.dto.response.UserResponse;
 import com.vitaliy.authservice.service.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,21 +21,21 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
-    public UserResponse register(@RequestBody RegisterRequest request) {
+    public UserResponse register(@Valid @RequestBody RegisterRequest request) {
         return authService.register(request);
     }
 
     @PostMapping("/login")
-    public AuthResponse login(@RequestBody LoginRequest request) {
+    public AuthResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
     }
 
     @PostMapping("/refresh")
-    public AuthResponse refresh(@RequestBody RefreshRequest request) {
+    public AuthResponse refresh(@Valid @RequestBody RefreshRequest request) {
         return authService.refresh(request.getRefreshToken());
     }
     @PostMapping("/logout")
-    public void logout(@RequestBody RefreshRequest request) {
+    public void logout(@Valid @RequestBody RefreshRequest request) {
         authService.logout(request.getRefreshToken());
     }
 }
