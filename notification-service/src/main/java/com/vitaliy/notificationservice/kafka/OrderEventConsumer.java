@@ -1,0 +1,42 @@
+package com.vitaliy.notificationservice.kafka;
+
+import com.vitaliy.notificationservice.service.NotificationService;
+import com.vitaliy.notificationservice.event.OrderEvent;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.stereotype.Component;
+
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class OrderEventConsumer {
+
+    private final NotificationService service;
+
+    @KafkaListener(topics = "order.created", groupId = "notification-group")
+    public void handleOrderCreated(OrderEvent event) {
+        log.info("Received order.created: {}", event);
+        service.create(
+                event.getUserId(),
+                "user@example.com",
+                "ORDER_CREATED",
+                event.getOrderId(),
+                "Order Created",
+                "Your order #" + event.getOrderId() + " has been created"
+        );
+    }
+
+    @KafkaListener(topics = "order.status-changed", groupId = "notification-group")
+    public void handleOrderStatusChanged(OrderEvent event) {
+        log.info("Received order.status-changed: {}", event);
+        service.create(
+                event.getUserId(),
+                "user@example.com",
+                "ORDER_STATUS_CHANGED",
+                event.getOrderId(),
+                "Order Status Updated",
+                "Your order #" + event.getOrderId() + " is now " + event.getStatus()
+        );
+    }
+}

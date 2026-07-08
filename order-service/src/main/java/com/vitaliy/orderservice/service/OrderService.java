@@ -6,18 +6,24 @@ import com.vitaliy.orderservice.domain.OrderStatus;
 import com.vitaliy.orderservice.dto.OrderItemResponse;
 import com.vitaliy.orderservice.dto.OrderRequest;
 import com.vitaliy.orderservice.dto.OrderResponse;
+import com.vitaliy.orderservice.event.OrderEvent;
+import com.vitaliy.orderservice.kafka.OrderProducer;
 import com.vitaliy.orderservice.repository.OrderRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class OrderService {
+
     private final OrderRepository repository;
+    private final OrderProducer orderProducer;
 
     @Transactional
     public OrderResponse create(OrderRequest request) {
@@ -44,7 +50,17 @@ public class OrderService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         order.setTotalAmount(total);
 
-        return toResponse(repository.save(order));
+        Order saved = repository.save(order);
+
+        orderProducer.sendOrderCreated(OrderEvent.builder()
+                .orderId(saved.getId())
+                .userId(saved.getUserId())
+                .status(saved.getStatus().name())
+                .totalAmount(saved.getTotalAmount())
+                .timestamp(LocalDateTime.now())
+                .build());
+
+        return toResponse(saved);
     }
 
     public List<OrderResponse> getAll() {
