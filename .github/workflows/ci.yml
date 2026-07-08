@@ -49,19 +49,12 @@ jobs:
           chmod +x notification-service/mvnw
 
       - name: Build auth-service
-        run: cd auth-service && ./mvnw test -DskipTests=false
-        env:
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_NAME: testdb
-          DB_USERNAME: postgres
-          DB_PASSWORD: postgres
-
-      - name: Build product-service
-        run: cd product-service && ./mvnw test
-
-      - name: Build inventory-service
-        run: cd inventory-service && ./mvnw test
+        run: |
+          cd auth-service
+          mkdir -p src/main/resources/keys
+          openssl genpkey -algorithm RSA -out src/main/resources/keys/private.key -pkeyopt rsa_keygen_bits:2048
+          openssl rsa -pubout -in src/main/resources/keys/private.key -out src/main/resources/keys/public.key
+          ./mvnw test
         env:
           DB_HOST: localhost
           DB_PORT: 5432
