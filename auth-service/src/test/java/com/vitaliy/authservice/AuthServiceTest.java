@@ -6,7 +6,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
 @ActiveProfiles("test")
-public class AuthServiceTest extends PostgresTestContainerConfig {
+public class AuthServiceTest {
 
     @Test
     void contextLoads() {
