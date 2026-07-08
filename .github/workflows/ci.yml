@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+
+      # Даем права на запуск mvnw во всех сервисах, чтобы избежать ошибок Permission Denied
+      - name: Grant execute permission for mvnw
+        run: |
+          chmod +x auth-service/mvnw
+          chmod +x product-service/mvnw
+          chmod +x inventory-service/mvnw
+          chmod +x order-service/mvnw
+          chmod +x notification-service/mvnw
+
+      - name: Build auth-service
+        run: cd auth-service && ./mvnw test -DskipTests=false
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: testdb
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
+
+      - name: Build product-service
+        run: cd product-service && ./mvnw test
+
+      - name: Build inventory-service
+        run: cd inventory-service && ./mvnw test
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: testdb
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
+
+      - name: Build order-service
+        run: cd order-service && ./mvnw test
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: testdb
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
+
+      - name: Build notification-service
+        run: cd notification-service && ./mvnw test
