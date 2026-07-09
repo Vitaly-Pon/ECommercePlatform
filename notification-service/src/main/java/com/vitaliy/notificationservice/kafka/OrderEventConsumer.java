@@ -1,7 +1,7 @@
 package com.vitaliy.notificationservice.kafka;
 
 import com.vitaliy.notificationservice.service.NotificationService;
-import com.vitaliy.notificationservice.event.OrderEvent;
+import com.vitaliy.orderservice.event.OrderEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -16,9 +16,9 @@ public class OrderEventConsumer {
 
     @KafkaListener(topics = "order.created", groupId = "notification-group")
     public void handleOrderCreated(OrderEvent event) {
-        log.info("Received order.created: {}", event);
+        // event.getUserId(), event.getOrderId() — как у Avro-класса
         service.create(
-                event.getUserId(),
+                event.getUserId().toString(),
                 "user@example.com",
                 "ORDER_CREATED",
                 event.getOrderId(),
@@ -31,7 +31,7 @@ public class OrderEventConsumer {
     public void handleOrderStatusChanged(OrderEvent event) {
         log.info("Received order.status-changed: {}", event);
         service.create(
-                event.getUserId(),
+                event.getUserId().toString(),
                 "user@example.com",
                 "ORDER_STATUS_CHANGED",
                 event.getOrderId(),

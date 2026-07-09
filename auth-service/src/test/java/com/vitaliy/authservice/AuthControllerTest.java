@@ -1,6 +1,7 @@
 package com.vitaliy.authservice;
 
 import com.vitaliy.authservice.controller.AuthController;
+import com.vitaliy.authservice.dto.response.AuthResponse;
 import com.vitaliy.authservice.dto.response.UserResponse;
 import com.vitaliy.authservice.service.AuthService;
 import org.junit.jupiter.api.Test;
@@ -8,10 +9,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+
 import org.springframework.test.web.servlet.MockMvc;
+
 import static com.vitaliy.authservice.TestData.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -51,6 +55,7 @@ public class AuthControllerTest {
                         .content("{\"email\":\"NOEMAIL\", \"password\":\"123456\"}"))  // плохой email
                 .andExpect(status().isBadRequest());  // 400
     }
+
     @Test
     void shouldReturn400WhenPasswordIsBlank() throws Exception {
 
@@ -60,5 +65,40 @@ public class AuthControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void shouldLoginUser() throws Exception {
+        AuthResponse mockResponse = new AuthResponse(
+                "token123", "refresh456", "Bearer", 3600000L,
+                new UserResponse(1L, EMAIL, "USER"));
+        when(authService.login(any())).thenReturn(mockResponse);
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .with(csrf())
+                        .contentType("application/json")
+                        .content("{\"email\":\"test@test.com\", \"password\":\"123456\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("token123"))
+                .andExpect(jsonPath("$.tokenType").value("Bearer"));
+    }
+
+    @Test
+    void shouldReturn400WhenBadCredentials() throws Exception {
+        when(authService.login(any())).thenThrow(new RuntimeException("Invalid password"));
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .with(csrf())
+                        .contentType("application/json")
+                        .content("{\"email\":\"test@test.com\", \"password\":\"wrong\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldReturn400WhenLoginEmailIsBlank() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .with(csrf())
+                        .contentType("application/json")
+                        .content("{\"email\":\"\", \"password\":\"123456\"}"))
+                .andExpect(status().isBadRequest());
+    }
 
 }

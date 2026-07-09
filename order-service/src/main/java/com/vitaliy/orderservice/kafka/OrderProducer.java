@@ -14,8 +14,4 @@ public class OrderProducer {
     public void sendOrderCreated(OrderEvent event) {
         kafkaTemplate.send("order.created", event);
     }
-
-    public void sendOrderStatusChanged(OrderEvent event) {
-        kafkaTemplate.send("order.status-changed", event);
-    }
 }

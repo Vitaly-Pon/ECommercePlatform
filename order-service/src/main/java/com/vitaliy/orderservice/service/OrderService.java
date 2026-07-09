@@ -87,12 +87,12 @@ public class OrderService {
         }
 
         // Отправка в Kafka
-        orderProducer.sendOrderCreated(OrderEvent.builder()
-                .orderId(saved.getId())
-                .userId(saved.getUserId())
-                .status(saved.getStatus().name())
-                .totalAmount(saved.getTotalAmount())
-                .timestamp(LocalDateTime.now())
+        orderProducer.sendOrderCreated(OrderEvent.newBuilder()
+                .setOrderId(saved.getId())
+                .setUserId(saved.getUserId())
+                .setStatus(saved.getStatus().name())
+                .setTotalAmount(saved.getTotalAmount().toString())
+                .setTimestamp(LocalDateTime.now().toString())
                 .build());
 
         return toResponse(saved);

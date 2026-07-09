@@ -1,0 +1,12 @@
+{
+  "type": "record",
+  "namespace": "com.vitaliy.orderservice.event",
+  "name": "OrderEvent",
+  "fields": [
+    {"name": "orderId", "type": "long"},
+    {"name": "userId", "type": "string"},
+    {"name": "status", "type": "string"},
+    {"name": "totalAmount", "type": "string"},
+    {"name": "timestamp", "type": "string"}
+  ]
+}
