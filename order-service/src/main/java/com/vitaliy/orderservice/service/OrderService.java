@@ -10,14 +10,10 @@ import com.vitaliy.orderservice.dto.OrderResponse;
 import com.vitaliy.orderservice.event.OrderEvent;
 import com.vitaliy.orderservice.kafka.OrderProducer;
 import com.vitaliy.orderservice.repository.OrderRepository;
-import org.springframework.web.reactive.function.client.WebClient;
-import com.vitaliy.orderservice.dto.InventoryResponse;
-import java.util.Map;
+import com.vitaliy.orderservice.grpc.GrpcInventoryClient;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -29,24 +25,16 @@ public class OrderService {
 
     private final OrderRepository repository;
     private final OrderProducer orderProducer;
-    private final WebClient webClient = WebClient.create("http://localhost:8084");
+    private final GrpcInventoryClient inventoryClient;
 
     @Transactional
     public OrderResponse create(OrderRequest request) {
 
         // Проверка наличия
         for (OrderItemRequest item : request.getItems()) {
-            InventoryResponse inventory = this.webClient.get()
-                    .uri("/api/v1/inventory/{productId}", item.getProductId())
-                    .retrieve()
-                    .bodyToMono(InventoryResponse.class)
-                    .block();
-
-            if (inventory == null || inventory.getAvailable() < item.getQuantity()) {
-                throw new RuntimeException(
-                        "Not enough stock for product: " + item.getProductId() +
-                                ". Available: " + (inventory != null ? inventory.getAvailable() : 0) +
-                                ", requested: " + item.getQuantity());
+            boolean available = inventoryClient.checkStock(item.getProductId(), item.getQuantity());
+            if (!available) {
+                throw new RuntimeException("Not enough stock for product: " + item.getProductId());
             }
         }
 
@@ -78,12 +66,7 @@ public class OrderService {
 
         // Резервирование товаров
         for (OrderItemRequest item : request.getItems()) {
-            webClient.post()
-                    .uri("/api/v1/inventory/reserve")
-                    .bodyValue(Map.of("productId", item.getProductId(), "quantity", item.getQuantity()))
-                    .retrieve()
-                    .bodyToMono(Void.class)
-                    .block();
+            inventoryClient.reserveStock(item.getProductId(), item.getQuantity());
         }
 
         // Отправка в Kafka
@@ -96,7 +79,6 @@ public class OrderService {
                 .build());
 
         return toResponse(saved);
-
     }
 
     public List<OrderResponse> getAll() {

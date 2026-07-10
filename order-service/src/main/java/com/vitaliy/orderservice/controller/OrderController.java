@@ -1,4 +1,4 @@
-package com.vitaliy.orderservice.contoller;
+package com.vitaliy.orderservice.controller;
 
 import com.vitaliy.orderservice.dto.OrderRequest;
 import com.vitaliy.orderservice.dto.OrderResponse;
