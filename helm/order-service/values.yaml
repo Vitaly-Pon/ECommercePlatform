@@ -1,0 +1,27 @@
+replicaCount: 1
+
+image:
+  repository: order-service
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8085
+
+database:
+  host: postgres
+  port: 5432
+  name: order_db
+  username: postgres
+  password: postgres
+
+kafka:
+  bootstrapServers: kafka:9092
+
+schemaRegistry:
+  url: http://schema-registry:8081
+
+grpc:
+  inventoryHost: inventory-service
+  inventoryPort: 9090
