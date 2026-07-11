@@ -85,7 +85,23 @@ services:
       SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
     networks:
       - ecom-net
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - ecom-net
 
+  grafana:
+      image: grafana/grafana:latest
+      container_name: grafana
+      ports:
+        - "3000:3000"
+      networks:
+        - ecom-net
   # ========== МИКРОСЕРВИСЫ ==========
   api-gateway:
     build:
@@ -252,6 +268,8 @@ services:
       - schema-registry
     networks:
       - ecom-net
+
+
 
 # ========== СЕТИ И ТОМА ==========
 networks:
