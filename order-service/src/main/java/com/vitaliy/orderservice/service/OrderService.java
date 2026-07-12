@@ -28,7 +28,7 @@ public class OrderService {
     private final GrpcInventoryClient inventoryClient;
 
     @Transactional
-    public OrderResponse create(OrderRequest request) {
+    public OrderResponse create(OrderRequest request, String userId) {
 
         // Проверка наличия
         for (OrderItemRequest item : request.getItems()) {
@@ -40,7 +40,7 @@ public class OrderService {
 
         // Создание заказа
         Order order = Order.builder()
-                .userId(request.getUserId())
+                .userId(userId)
                 .status(OrderStatus.NEW)
                 .totalAmount(BigDecimal.ZERO)
                 .build();

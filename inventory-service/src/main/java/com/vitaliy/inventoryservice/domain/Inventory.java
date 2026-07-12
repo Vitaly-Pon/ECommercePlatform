@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -31,6 +32,9 @@ public class Inventory {
 
     @Column(nullable = false)
     private Integer reserved;
+
+    @Version
+    private Long version;
 
     public Integer getAvailable() {
         return quantity - reserved;

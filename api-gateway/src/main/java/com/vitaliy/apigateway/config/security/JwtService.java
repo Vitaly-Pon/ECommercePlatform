@@ -52,4 +52,9 @@ public class JwtService {
         return (RSAPublicKey) KeyFactory.getInstance("RSA")
                 .generatePublic(new X509EncodedKeySpec(decoded));
     }
+
+    public Long extractUserId(String token) {
+        Number userId = parseClaims(token).get("userId", Number.class);
+        return userId != null ? userId.longValue() : null;
+    }
 }

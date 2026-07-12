@@ -4,6 +4,7 @@ import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -36,6 +37,12 @@ public class JwtAuthFilter implements GatewayFilter {
             return exchange.getResponse().setComplete();
         }
 
-        return chain.filter(exchange);
+        String userId = String.valueOf(jwtService.extractUserId(token));
+
+        ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
+                .header("X-User-Id", userId)
+                .build();
+
+        return chain.filter(exchange.mutate().request(mutatedRequest).build());
     }
 }

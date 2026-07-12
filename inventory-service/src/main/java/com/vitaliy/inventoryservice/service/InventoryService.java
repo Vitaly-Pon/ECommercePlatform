@@ -32,10 +32,13 @@ public class InventoryService {
 
     @Transactional
     public InventoryResponse reserve(ReserveRequest request) {
+        int updated = repository.reserveStock(request.getProductId(), request.getQuantity());
+        if (updated == 0) {
+            throw new RuntimeException("Not enough stock");
+        }
         Inventory inventory = repository.findByProductId(request.getProductId())
-                .orElseThrow(() -> new RuntimeException("Product not found in inventory"));
-        inventory.reserve(request.getQuantity());
-        return toResponse(repository.save(inventory));
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+        return toResponse(inventory);
     }
 
     @Transactional
