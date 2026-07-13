@@ -239,7 +239,7 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SCHEMA_REGISTRY_URL: http://schema-registry:8081
       INVENTORY_SERVICE_GRPC_HOST: inventory-service
-      INVENTORY_SERVICE_GRPC_PORT: 9090   # если используете gRPC, укажите свой порт
+      INVENTORY_SERVICE_GRPC_PORT: 9090
     depends_on:
       - postgres
       - kafka
