@@ -23,11 +23,28 @@ public class JwtService {
     private final RSAPrivateKey privateKey;
     private final RSAPublicKey publicKey;
 
+/*    public JwtService(
+            @Value("${jwt.private-key}") Resource privateKeyResource,
+            @Value("${jwt.public-key}") Resource publicKeyResource,
+            @Value("${jwt.expiration}") long expiration
+    ) {
+        try {
+            this.expiration = expiration;
+            this.privateKey = loadPrivateKey(privateKeyResource);
+            this.publicKey = loadPublicKey(publicKeyResource);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load RSA keys", e);
+        }
+    }*/
+
     public JwtService(
             @Value("${jwt.private-key}") Resource privateKeyResource,
             @Value("${jwt.public-key}") Resource publicKeyResource,
             @Value("${jwt.expiration}") long expiration
     ) {
+        System.out.println("PRIVATE = " + privateKeyResource);
+        System.out.println("PUBLIC  = " + publicKeyResource);
+
         try {
             this.expiration = expiration;
             this.privateKey = loadPrivateKey(privateKeyResource);
