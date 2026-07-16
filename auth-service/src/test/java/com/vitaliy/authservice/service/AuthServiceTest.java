@@ -11,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import static com.vitaliy.authservice.support.TestData.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
@@ -90,5 +91,23 @@ public class AuthServiceTest  extends BaseIntegrationTest {
                 EmailAlreadyExistsException.class,
                 () -> authService.register(registerRequest())
         );
+    }
+
+    @Test
+    void shouldRefreshToken() {
+        authService.register(registerRequest());
+        AuthResponse auth = authService.login(loginRequest());
+
+        AuthResponse refreshed = authService.refresh(auth.getRefreshToken());
+
+        assertThat(refreshed.getAccessToken()).isNotBlank();
+    }
+
+    @Test
+    void shouldLogout() {
+        authService.register(registerRequest());
+        AuthResponse auth = authService.login(loginRequest());
+
+        assertDoesNotThrow(() -> authService.logout(auth.getRefreshToken()));
     }
 }

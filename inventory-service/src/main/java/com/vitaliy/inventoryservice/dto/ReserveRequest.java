@@ -13,4 +13,7 @@ public class ReserveRequest {
     @NotNull
     @Min(1)
     private Integer quantity;
+
+    @NotBlank
+    private String reservationId;
 }

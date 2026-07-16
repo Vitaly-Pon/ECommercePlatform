@@ -20,6 +20,7 @@ message StockResponse {
 message ReserveRequest {
   string productId = 1;
   int32 quantity = 2;
+  string reservationId = 3;
 }
 
 message ReserveResponse {

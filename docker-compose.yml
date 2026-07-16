@@ -145,7 +145,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       SCHEMA_REGISTRY_URL: http://schema-registry:8081
     depends_on:
       - postgres
@@ -168,7 +168,7 @@ services:
       DB_NAME: user_db
       DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       SCHEMA_REGISTRY_URL: http://schema-registry:8081
     depends_on:
       - postgres
@@ -190,7 +190,7 @@ services:
       MONGO_DATABASE: product_db
       MONGO_USERNAME: ${MONGO_USER:-admin}
       MONGO_PASSWORD: ${MONGO_PASSWORD:-admin123}
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       SCHEMA_REGISTRY_URL: http://schema-registry:8081
     depends_on:
       - mongodb
@@ -213,7 +213,7 @@ services:
       DB_NAME: inventory_db
       DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       SCHEMA_REGISTRY_URL: http://schema-registry:8081
       GRPC_SERVER_PORT: 9090
     depends_on:
@@ -236,7 +236,7 @@ services:
       DB_NAME: order_db
       DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       SCHEMA_REGISTRY_URL: http://schema-registry:8081
       INVENTORY_SERVICE_GRPC_HOST: inventory-service
       INVENTORY_SERVICE_GRPC_PORT: 9090
@@ -261,7 +261,7 @@ services:
       MONGO_DATABASE: notification_db
       MONGO_USERNAME: ${MONGO_USER:-admin}
       MONGO_PASSWORD: ${MONGO_PASSWORD:-admin123}
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       SCHEMA_REGISTRY_URL: http://schema-registry:8081
     depends_on:
       - mongodb
