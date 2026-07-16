@@ -113,15 +113,26 @@ services:
     volumes:
           - ./.secrets/dev/public.key:/run/secrets/public.key:ro #ro -сможет читать ключи, но не сможет их изменить или удалить.
     environment:
-      # Передаем хосты и порты раздельно, как требует properties:
       JWT_PUBLIC_KEY: file:/run/secrets/public.key
+
       AUTH_SERVICE_HOST: auth-service
       AUTH_SERVICE_PORT: 8081
+
       PRODUCT_SERVICE_HOST: product-service
       PRODUCT_SERVICE_PORT: 8083
-      # Остальные сервисы
+
       USER_SERVICE_HOST: user-service
       USER_SERVICE_PORT: 8082
+
+      INVENTORY_SERVICE_HOST: inventory-service
+      INVENTORY_SERVICE_PORT: 8084
+
+      ORDER_SERVICE_HOST: order-service
+      ORDER_SERVICE_PORT: 8085
+
+      NOTIFICATION_SERVICE_HOST: notification-service
+      NOTIFICATION_SERVICE_PORT: 8086
+
     networks:
       - ecom-net
 
@@ -130,8 +141,6 @@ services:
       context: ./auth-service
       dockerfile: Dockerfile
     container_name: auth-service
-    ports:
-      - "8091:8081"
     volumes:
           - ./.secrets/dev/private.key:/run/secrets/private.key:ro
           - ./.secrets/dev/public.key:/run/secrets/public.key:ro
@@ -160,8 +169,6 @@ services:
       context: ./user-service
       dockerfile: Dockerfile
     container_name: user-service
-    ports:
-      - "8092:8082"
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
@@ -182,8 +189,6 @@ services:
       context: ./product-service
       dockerfile: Dockerfile
     container_name: product-service
-    ports:
-      - "8093:8083"
     environment:
       MONGO_HOST: mongodb
       MONGO_PORT: 27017
@@ -204,9 +209,6 @@ services:
       context: ./inventory-service
       dockerfile: Dockerfile
     container_name: inventory-service
-    ports:
-      - "8094:8084"
-      - "9090:9090"
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
@@ -228,8 +230,6 @@ services:
       context: ./order-service
       dockerfile: Dockerfile
     container_name: order-service
-    ports:
-      - "8095:8085"
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
@@ -253,8 +253,6 @@ services:
       context: ./notification-service
       dockerfile: Dockerfile
     container_name: notification-service
-    ports:
-      - "8096:8086"
     environment:
       MONGO_HOST: mongodb
       MONGO_PORT: 27017

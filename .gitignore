@@ -16,3 +16,9 @@ Thumbs.db
 
 # Secrets
 .secrets/
+
+# Test RSA keys
+**/src/test/resources/keys/
+
+.sts4-cache
+
