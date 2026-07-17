@@ -1,9 +1,9 @@
 package com.vitaliy.authservice.config.security;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
@@ -12,6 +12,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -27,13 +28,19 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // 1. Полностью освобождаем Actuator от проверок безопасности
-                        .requestMatchers(EndpointRequest.toAnyEndpoint()).permitAll()
-                        // 2. Открываем остальные эндпоинты вашего приложения
-                        .anyRequest().permitAll()
+                        .requestMatchers(
+                                "/api/v1/auth/register",
+                                "/api/v1/auth/login",
+                                "/api/v1/auth/refresh",
+                                "/actuator/health",
+                                "/actuator/prometheus"
+                        ).permitAll()
+                        .anyRequest().authenticated()
                 )
-                // Подключаем фильтр к цепочке Spring Security
-                .addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(
+                        jwtFilter(),
+                        UsernamePasswordAuthenticationFilter.class
+                );
 
         return http.build();
     }
@@ -41,7 +48,6 @@ public class SecurityConfig {
     @Bean
     public FilterRegistrationBean<JwtFilter> registration(JwtFilter filter) {
         FilterRegistrationBean<JwtFilter> registration = new FilterRegistrationBean<>(filter);
-        // Отключаем автоматическую регистрацию фильтра в веб-контейнере Tomcat
         registration.setEnabled(false);
         return registration;
     }

@@ -14,6 +14,7 @@ import java.util.Base64;
 
 @Service
 public class JwtService {
+
     private final RSAPublicKey publicKey;
 
     public JwtService(@Value("${jwt.public-key}") Resource publicKeyResource) {
@@ -46,7 +47,6 @@ public class JwtService {
                 .replace("-----BEGIN PUBLIC KEY-----", "")
                 .replace("-----END PUBLIC KEY-----", "")
                 .replaceAll("\\s", "");
-
         byte[] decoded = Base64.getDecoder().decode(key);
 
         return (RSAPublicKey) KeyFactory.getInstance("RSA")
@@ -56,5 +56,9 @@ public class JwtService {
     public Long extractUserId(String token) {
         Number userId = parseClaims(token).get("userId", Number.class);
         return userId != null ? userId.longValue() : null;
+    }
+
+    public String extractRole(String token) {
+        return parseClaims(token).get("role", String.class);
     }
 }

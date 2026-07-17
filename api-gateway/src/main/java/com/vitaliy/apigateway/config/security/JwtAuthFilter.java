@@ -38,9 +38,11 @@ public class JwtAuthFilter implements GatewayFilter {
         }
 
         String userId = String.valueOf(jwtService.extractUserId(token));
+        String role = jwtService.extractRole(token);
 
         ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
                 .header("X-User-Id", userId)
+                .header("X-User-Role", role)
                 .build();
 
         return chain.filter(exchange.mutate().request(mutatedRequest).build());
