@@ -38,7 +38,20 @@ public class JwtAuthFilter implements GatewayFilter {
         }
 
         String userId = String.valueOf(jwtService.extractUserId(token));
+
+        String path = exchange.getRequest().getPath().toString();
+        String method = exchange.getRequest().getMethod().name();
         String role = jwtService.extractRole(token);
+
+// Проверка прав доступа
+        boolean isAdminAction =
+                (path.startsWith("/api/v1/products") && (method.equals("POST") || method.equals("PUT") || method.equals("DELETE"))) ||
+                        path.startsWith("/api/v1/users");
+
+        if (isAdminAction && !"ROLE_ADMIN".equals(role)) {
+            exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+            return exchange.getResponse().setComplete();
+        }
 
         ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
                 .header("X-User-Id", userId)

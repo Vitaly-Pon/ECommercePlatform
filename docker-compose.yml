@@ -238,8 +238,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      INVENTORY_SERVICE_GRPC_HOST: inventory-service
-      INVENTORY_SERVICE_GRPC_PORT: 9090
+      GRPC_INVENTORY_HOST: inventory-service
+      GRPC_INVENTORY_PORT: 9090
     depends_on:
       - postgres
       - kafka

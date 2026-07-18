@@ -29,7 +29,6 @@ public class JwtService {
             @Value("${jwt.public-key}") Resource publicKeyResource,
             @Value("${jwt.expiration}") long expiration
     ) {
-        log.info("RSA keys loaded successfully");
 
         try {
             this.expiration = expiration;
