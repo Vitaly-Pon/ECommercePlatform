@@ -26,7 +26,6 @@ public class Reservation {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-
     @Column(
             name = "reservation_id",
             nullable = false,
@@ -40,7 +39,6 @@ public class Reservation {
     private Integer quantity;
 
     private Instant createdAt;
-
 
     @Column(nullable = false)
     @Builder.Default

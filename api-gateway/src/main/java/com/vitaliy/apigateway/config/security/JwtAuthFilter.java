@@ -37,18 +37,45 @@ public class JwtAuthFilter implements GatewayFilter {
             return exchange.getResponse().setComplete();
         }
 
-        String userId = String.valueOf(jwtService.extractUserId(token));
+        Long userIdValue = jwtService.extractUserId(token);
+
+        if (userIdValue == null) {
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
+        }
+        String userId = String.valueOf(userIdValue);
 
         String path = exchange.getRequest().getPath().toString();
         String method = exchange.getRequest().getMethod().name();
         String role = jwtService.extractRole(token);
 
+        if (role == null) {
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
+        }
+
 // Проверка прав доступа
+        boolean isManagerAction =
+                path.startsWith("/api/v1/products")
+                        && (method.equals("POST")
+                        || method.equals("PUT"));
+
         boolean isAdminAction =
-                (path.startsWith("/api/v1/products") && (method.equals("POST") || method.equals("PUT") || method.equals("DELETE"))) ||
-                        path.startsWith("/api/v1/users");
+                (path.startsWith("/api/v1/products")
+                        && method.equals("DELETE"))
+                        ||
+                        path.startsWith("/api/v1/users/admin");
+
+
+        if (isManagerAction
+                && !("ROLE_MANAGER".equals(role) || "ROLE_ADMIN".equals(role))) {
+
+            exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+            return exchange.getResponse().setComplete();
+        }
 
         if (isAdminAction && !"ROLE_ADMIN".equals(role)) {
+
             exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
             return exchange.getResponse().setComplete();
         }

@@ -24,7 +24,6 @@ public class InventoryService {
     private final InventoryRepository inventoryRepository;
     private final ReservationRepository reservationRepository;
 
-
     @Transactional
     public InventoryResponse addStock(StockRequest request) {
 
@@ -53,8 +52,7 @@ public class InventoryService {
                         .findByReservationId(request.getReservationId())
                         .orElseThrow(() ->
                                 new RuntimeException(
-                                        "Reservation not found"
-                                )
+                                        "Reservation not found")
                         );
         if (reservation.isReleased()) {
             return getInventoryResponse(
@@ -68,8 +66,7 @@ public class InventoryService {
                         )
                         .orElseThrow(() ->
                                 new RuntimeException(
-                                        "Product not found"
-                                )
+                                        "Product not found")
                         );
         inventory.release(
                 reservation.getQuantity()
@@ -79,7 +76,6 @@ public class InventoryService {
 
         return toResponse(inventory);
     }
-
 
     @Transactional
     public InventoryResponse reserve(ReserveRequest request) {
@@ -95,7 +91,6 @@ public class InventoryService {
             );
         }
 
-
         int updated =
                 inventoryRepository.reserveStock(
                         request.getProductId(),
@@ -107,7 +102,6 @@ public class InventoryService {
             throw new RuntimeException("Not enough stock");
         }
 
-
         reservationRepository.save(
                 Reservation.builder()
                         .reservationId(request.getReservationId())
@@ -116,7 +110,6 @@ public class InventoryService {
                         .createdAt(Instant.now())
                         .build()
         );
-
 
         return getInventoryResponse(
                 request.getProductId()
