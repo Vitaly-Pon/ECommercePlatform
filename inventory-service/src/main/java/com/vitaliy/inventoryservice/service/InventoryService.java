@@ -6,10 +6,11 @@ import com.vitaliy.inventoryservice.domain.Reservation;
 import com.vitaliy.inventoryservice.dto.InventoryResponse;
 import com.vitaliy.inventoryservice.dto.ReserveRequest;
 import com.vitaliy.inventoryservice.dto.StockRequest;
+import com.vitaliy.inventoryservice.kafka.InventoryProducer;
 import com.vitaliy.inventoryservice.repository.InventoryRepository;
 import com.vitaliy.inventoryservice.repository.ReservationRepository;
+import com.vitaliy.inventoryservice.event.InventoryEvent;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,8 @@ public class InventoryService {
 
     private final InventoryRepository inventoryRepository;
     private final ReservationRepository reservationRepository;
+    private final InventoryProducer inventoryProducer;
+
 
     @Transactional
     public InventoryResponse addStock(StockRequest request) {
@@ -97,17 +100,25 @@ public class InventoryService {
                         request.getQuantity()
                 );
 
-
         if (updated == 0) {
             throw new RuntimeException("Not enough stock");
         }
 
-        reservationRepository.save(
+        Reservation reservation = reservationRepository.save(
                 Reservation.builder()
                         .reservationId(request.getReservationId())
                         .productId(request.getProductId())
                         .quantity(request.getQuantity())
                         .createdAt(Instant.now())
+                        .build()
+        );
+        inventoryProducer.sendReserved(
+                InventoryEvent.newBuilder()
+                        .setProductId(request.getProductId())
+                        .setQuantity(request.getQuantity())
+                        .setReservationId(request.getReservationId())
+                        .setStatus("RESERVED")
+                        .setTimestamp(Instant.now().toString())
                         .build()
         );
 
@@ -130,7 +141,6 @@ public class InventoryService {
         return toResponse(inventory);
     }
 
-
     public List<InventoryResponse> getAll() {
 
         return inventoryRepository.findAll()
@@ -138,7 +148,6 @@ public class InventoryService {
                 .map(this::toResponse)
                 .toList();
     }
-
 
     private InventoryResponse getInventoryResponse(String productId) {
 
@@ -150,10 +159,8 @@ public class InventoryService {
                                 )
                         );
 
-
         return toResponse(inventory);
     }
-
 
     private InventoryResponse toResponse(Inventory inventory) {
 

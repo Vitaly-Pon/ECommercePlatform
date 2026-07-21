@@ -6,11 +6,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+import com.vitaliy.inventoryservice.event.InventoryEvent;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class OrderEventConsumer {
+public class KafkaEventConsumer {
 
     private final NotificationService service;
 
@@ -37,6 +38,27 @@ public class OrderEventConsumer {
                 event.getOrderId(),
                 "Order Status Updated",
                 "Your order #" + event.getOrderId() + " is now " + event.getStatus()
+        );
+    }
+    @KafkaListener(topics = "inventory.reserved", groupId = "notification-group")
+    public void handleInventoryReserved(InventoryEvent event) {
+
+        log.info(
+                "Inventory reserved: productId={}, quantity={}, reservationId={}",
+                event.getProductId(),
+                event.getQuantity(),
+                event.getReservationId()
+        );
+
+        service.create(
+                "SYSTEM",
+                "system@example.com",
+                "INVENTORY_RESERVED",
+                null,
+                "Inventory Reserved",
+                "Product " + event.getProductId()
+                        + " reserved, quantity="
+                        + event.getQuantity()
         );
     }
 }

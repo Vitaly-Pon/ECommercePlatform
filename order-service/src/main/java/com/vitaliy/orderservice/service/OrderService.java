@@ -26,19 +26,24 @@ public class OrderService {
     private final OrderRepository repository;
     private final OrderProducer orderProducer;
     private final GrpcInventoryClient inventoryClient;
+    private final OrderStateMachine stateMachine;
 
     @Transactional
     public OrderResponse create(OrderRequest request, String userId) {
 
-        // Проверка наличия
         for (OrderItemRequest item : request.getItems()) {
-            boolean available = inventoryClient.checkStock(item.getProductId(), item.getQuantity());
+            boolean available = inventoryClient.checkStock(
+                    item.getProductId(),
+                    item.getQuantity()
+            );
+
             if (!available) {
-                throw new RuntimeException("Not enough stock for product: " + item.getProductId());
+                throw new RuntimeException(
+                        "Not enough stock for product: " + item.getProductId()
+                );
             }
         }
 
-        // Создание заказа
         Order order = Order.builder()
                 .userId(userId)
                 .status(OrderStatus.NEW)
@@ -58,31 +63,76 @@ public class OrderService {
         order.setItems(items);
 
         BigDecimal total = items.stream()
-                .map(i -> i.getPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
+                .map(i -> i.getPrice()
+                        .multiply(BigDecimal.valueOf(i.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         order.setTotalAmount(total);
 
         Order saved = repository.save(order);
 
-        // Резервирование товаров
         for (OrderItemRequest item : request.getItems()) {
-            inventoryClient.reserveStock(item.getProductId(), item.getQuantity());
+            inventoryClient.reserveStock(
+                    item.getProductId(),
+                    item.getQuantity()
+            );
         }
 
-        // Отправка в Kafka
-        orderProducer.sendOrderCreated(OrderEvent.newBuilder()
-                .setOrderId(saved.getId())
-                .setUserId(saved.getUserId())
-                .setStatus(saved.getStatus().name())
-                .setTotalAmount(saved.getTotalAmount().toString())
-                .setTimestamp(LocalDateTime.now().toString())
-                .build());
+        order.setStatus(OrderStatus.RESERVED);
+        saved = repository.save(order);
+
+
+        orderProducer.sendOrderCreated(
+                OrderEvent.newBuilder()
+                        .setOrderId(saved.getId())
+                        .setUserId(saved.getUserId())
+                        .setStatus(saved.getStatus().name())
+                        .setTotalAmount(saved.getTotalAmount().toString())
+                        .setTimestamp(LocalDateTime.now().toString())
+                        .build()
+        );
+
+        return toResponse(saved);
+    }
+
+
+    @Transactional
+    public OrderResponse updateStatus(Long id, String status) {
+
+        Order order = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        OrderStatus newStatus = OrderStatus.valueOf(status.toUpperCase());
+
+        if (!stateMachine.canChange(order.getStatus(), newStatus)) {
+            throw new RuntimeException(
+                    "Invalid transition "
+                            + order.getStatus()
+                            + " -> "
+                            + newStatus
+            );
+        }
+
+        order.setStatus(newStatus);
+
+        Order saved = repository.save(order);
+
+        orderProducer.sendOrderStatusChanged(
+                OrderEvent.newBuilder()
+                        .setOrderId(saved.getId())
+                        .setUserId(saved.getUserId())
+                        .setStatus(saved.getStatus().name())
+                        .setTotalAmount(saved.getTotalAmount().toString())
+                        .setTimestamp(LocalDateTime.now().toString())
+                        .build()
+        );
 
         return toResponse(saved);
     }
 
     public List<OrderResponse> getAll() {
-        return repository.findAll().stream()
+        return repository.findAll()
+                .stream()
                 .map(this::toResponse)
                 .toList();
     }
@@ -93,16 +143,10 @@ public class OrderService {
                 .orElseThrow(() -> new RuntimeException("Order not found"));
     }
 
-    @Transactional
-    public OrderResponse updateStatus(Long id, String status) {
-        Order order = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
-        order.setStatus(OrderStatus.valueOf(status.toUpperCase()));
-        return toResponse(repository.save(order));
-    }
-
     private OrderResponse toResponse(Order o) {
-        List<OrderItemResponse> items = o.getItems().stream()
+
+        List<OrderItemResponse> items = o.getItems()
+                .stream()
                 .map(i -> OrderItemResponse.builder()
                         .productId(i.getProductId())
                         .productName(i.getProductName())
