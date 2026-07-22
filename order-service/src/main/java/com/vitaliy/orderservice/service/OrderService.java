@@ -30,7 +30,7 @@ public class OrderService {
     private final OrderStateMachine stateMachine;
 
     @Transactional
-    public OrderResponse create(OrderRequest request, String userId) {
+    public OrderResponse create(OrderRequest request, String userId, String email) {
 
         // Проверяем наличие товара
         for (OrderItemRequest item : request.getItems()) {
@@ -110,6 +110,7 @@ public class OrderService {
                         .setStatus(saved.getStatus().name())
                         .setTotalAmount(saved.getTotalAmount().toString())
                         .setTimestamp(LocalDateTime.now().toString())
+                        .setEmail(email)
                         .build()
         );
 

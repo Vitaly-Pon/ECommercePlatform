@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestHeader;
 
 import java.util.List;
 import java.util.Map;
@@ -30,8 +29,9 @@ public class OrderController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public OrderResponse create(@Valid @RequestBody OrderRequest request,
-                                @RequestHeader("X-User-Id") String userId) {
-        return service.create(request, userId);
+                                @RequestHeader("X-User-Id") String userId,
+                                @RequestHeader("X-User-Email") String email) {
+        return service.create(request, userId, email);
     }
 
     @GetMapping

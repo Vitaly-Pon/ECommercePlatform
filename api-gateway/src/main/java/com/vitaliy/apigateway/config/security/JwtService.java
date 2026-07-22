@@ -67,4 +67,7 @@ public class JwtService {
 
         return null;
     }
+    public String extractEmail(String token) {
+        return parseClaims(token).getSubject();
+    }
 }

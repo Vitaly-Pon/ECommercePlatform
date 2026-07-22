@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
-import com.vitaliy.inventoryservice.event.InventoryEvent;
 
 @Component
 @RequiredArgsConstructor
@@ -20,7 +19,7 @@ public class KafkaEventConsumer {
         // event.getUserId(), event.getOrderId() — как у Avro-класса
         service.create(
                 event.getUserId().toString(),
-                "user@example.com",
+                event.getEmail().toString(),
                 "ORDER_CREATED",
                 event.getOrderId(),
                 "Order Created",
@@ -33,32 +32,11 @@ public class KafkaEventConsumer {
         log.info("Received order.status-changed: {}", event);
         service.create(
                 event.getUserId().toString(),
-                "user@example.com",
+                event.getEmail().toString(),
                 "ORDER_STATUS_CHANGED",
                 event.getOrderId(),
                 "Order Status Updated",
                 "Your order #" + event.getOrderId() + " is now " + event.getStatus()
-        );
-    }
-    @KafkaListener(topics = "inventory.reserved", groupId = "notification-group")
-    public void handleInventoryReserved(InventoryEvent event) {
-
-        log.info(
-                "Inventory reserved: productId={}, quantity={}, reservationId={}",
-                event.getProductId(),
-                event.getQuantity(),
-                event.getReservationId()
-        );
-
-        service.create(
-                "SYSTEM",
-                "system@example.com",
-                "INVENTORY_RESERVED",
-                null,
-                "Inventory Reserved",
-                "Product " + event.getProductId()
-                        + " reserved, quantity="
-                        + event.getQuantity()
         );
     }
 }

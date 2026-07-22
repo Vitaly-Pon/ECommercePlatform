@@ -48,6 +48,7 @@ public class JwtAuthFilter implements GatewayFilter {
         String path = exchange.getRequest().getPath().toString();
         String method = exchange.getRequest().getMethod().name();
         String role = jwtService.extractRole(token);
+        String email = jwtService.extractEmail(token);
 
         if (role == null) {
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
@@ -83,6 +84,7 @@ public class JwtAuthFilter implements GatewayFilter {
         ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
                 .header("X-User-Id", userId)
                 .header("X-User-Role", role)
+                .header("X-User-Email", email)
                 .build();
 
         return chain.filter(exchange.mutate().request(mutatedRequest).build());
