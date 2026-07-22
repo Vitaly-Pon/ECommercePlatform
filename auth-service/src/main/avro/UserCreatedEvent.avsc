@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "namespace": "com.vitaliy.authservice.event",
+  "name": "UserCreatedEvent",
+  "fields": [
+    {"name": "userId", "type": "long"},
+    {"name": "email", "type": "string"},
+    {"name": "role", "type": "string"},
+    {"name": "timestamp", "type": "string"}
+  ]
+}

@@ -7,12 +7,15 @@ import com.vitaliy.authservice.dto.request.RegisterRequest;
 import com.vitaliy.authservice.dto.response.AuthResponse;
 import com.vitaliy.authservice.dto.response.UserResponse;
 import com.vitaliy.authservice.exeption.EmailAlreadyExistsException;
+import com.vitaliy.authservice.kafka.UserProducer;
 import com.vitaliy.authservice.repository.RefreshTokenRepository;
 import com.vitaliy.authservice.repository.UserRepository;
 import com.vitaliy.authservice.config.security.JwtService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.Instant;
+import com.vitaliy.authservice.event.UserCreatedEvent;
 
 @Service
 public class AuthServiceImp implements AuthService{
@@ -21,12 +24,17 @@ public class AuthServiceImp implements AuthService{
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final UserProducer userProducer;
 
-    public AuthServiceImp(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, RefreshTokenRepository refreshTokenRepository){
+
+    public AuthServiceImp(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService,
+                          RefreshTokenRepository refreshTokenRepository,UserProducer userProducer){
+
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.refreshTokenRepository = refreshTokenRepository;
+        this.userProducer = userProducer;
     }
     @Override
     public  UserResponse  register(RegisterRequest registerRequest){
@@ -40,6 +48,14 @@ public class AuthServiceImp implements AuthService{
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
 
         User saved = userRepository.save(user);
+
+        UserCreatedEvent event = UserCreatedEvent.newBuilder()
+                .setUserId(saved.getId())
+                .setEmail(saved.getEmail())
+                .setRole(saved.getRole().name())
+                .setTimestamp(Instant.now().toString())
+                .build();
+        userProducer.sendUserCreated(event);
 
         return new UserResponse(saved.getId(), saved.getEmail(), saved.getRole().name());
     }
