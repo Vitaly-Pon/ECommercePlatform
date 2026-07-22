@@ -11,6 +11,7 @@ import com.vitaliy.authservice.kafka.UserProducer;
 import com.vitaliy.authservice.repository.RefreshTokenRepository;
 import com.vitaliy.authservice.repository.UserRepository;
 import com.vitaliy.authservice.config.security.JwtService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,19 +27,18 @@ public class AuthServiceImp implements AuthService{
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserProducer userProducer;
 
-
     public AuthServiceImp(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService,
-                          RefreshTokenRepository refreshTokenRepository,UserProducer userProducer){
-
+                          RefreshTokenRepository refreshTokenRepository,
+                          @Autowired(required = false) UserProducer userProducer){
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.refreshTokenRepository = refreshTokenRepository;
         this.userProducer = userProducer;
     }
-    @Override
-    public  UserResponse  register(RegisterRequest registerRequest){
 
+    @Override
+    public UserResponse register(RegisterRequest registerRequest){
         if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
             throw new EmailAlreadyExistsException("Email already exists");
         }
@@ -49,13 +49,15 @@ public class AuthServiceImp implements AuthService{
 
         User saved = userRepository.save(user);
 
-        UserCreatedEvent event = UserCreatedEvent.newBuilder()
-                .setUserId(saved.getId())
-                .setEmail(saved.getEmail())
-                .setRole(saved.getRole().name())
-                .setTimestamp(Instant.now().toString())
-                .build();
-        userProducer.sendUserCreated(event);
+        if (userProducer != null) {
+            UserCreatedEvent event = UserCreatedEvent.newBuilder()
+                    .setUserId(saved.getId())
+                    .setEmail(saved.getEmail())
+                    .setRole(saved.getRole().name())
+                    .setTimestamp(Instant.now().toString())
+                    .build();
+            userProducer.sendUserCreated(event);
+        }
 
         return new UserResponse(saved.getId(), saved.getEmail(), saved.getRole().name());
     }
@@ -63,7 +65,6 @@ public class AuthServiceImp implements AuthService{
     @Override
     @Transactional
     public AuthResponse login(LoginRequest request) {
-
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -75,16 +76,9 @@ public class AuthServiceImp implements AuthService{
         RefreshToken refreshToken = createRefreshToken(user);
 
         return new AuthResponse(
-                accessToken,
-                refreshToken.getToken(),
-                "Bearer",
+                accessToken, refreshToken.getToken(), "Bearer",
                 jwtService.getExpirationMillis(),
-                new UserResponse(
-                        user.getId(),
-                        user.getEmail(),
-                        user.getRole().name()
-                )
-        );
+                new UserResponse(user.getId(), user.getEmail(), user.getRole().name()));
     }
 
     private String generateRefreshToken() {
@@ -93,52 +87,35 @@ public class AuthServiceImp implements AuthService{
 
     @Transactional
     public RefreshToken createRefreshToken(User user) {
-
         refreshTokenRepository.deleteByUser(user);
-
         RefreshToken token = new RefreshToken();
         token.setUser(user);
         token.setToken(generateRefreshToken());
         token.setExpiryDate(java.time.Instant.now().plusSeconds(7 * 24 * 60 * 60));
-
         return refreshTokenRepository.save(token);
     }
 
     @Override
     @Transactional
     public AuthResponse refresh(String refreshTokenValue) {
-
         RefreshToken refreshToken = refreshTokenRepository.findByToken(refreshTokenValue)
                 .orElseThrow(() -> new RuntimeException("Refresh token not found"));
-
         if (refreshToken.getExpiryDate().isBefore(java.time.Instant.now())) {
             throw new RuntimeException("Refresh token expired");
         }
-
         User user = refreshToken.getUser();
-
         String newAccessToken = jwtService.generateToken(user);
-
         return new AuthResponse(
-                newAccessToken,
-                refreshToken.getToken(),
-                "Bearer",
+                newAccessToken, refreshToken.getToken(), "Bearer",
                 jwtService.getExpirationMillis(),
-                new UserResponse(
-                        user.getId(),
-                        user.getEmail(),
-                        user.getRole().name()
-                )
-        );
+                new UserResponse(user.getId(), user.getEmail(), user.getRole().name()));
     }
 
     @Override
     @Transactional
     public void logout(String refreshTokenValue) {
-
         RefreshToken token = refreshTokenRepository.findByToken(refreshTokenValue)
                 .orElseThrow(() -> new RuntimeException("Refresh token not found"));
-
         refreshTokenRepository.delete(token);
     }
 }

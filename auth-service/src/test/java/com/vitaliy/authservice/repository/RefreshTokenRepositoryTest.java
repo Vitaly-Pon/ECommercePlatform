@@ -3,9 +3,11 @@ package com.vitaliy.authservice.repository;
 import com.vitaliy.authservice.configForTest.BaseIntegrationTest;
 import com.vitaliy.authservice.domain.RefreshToken;
 import com.vitaliy.authservice.domain.User;
+import com.vitaliy.authservice.kafka.UserProducer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Instant;
@@ -23,6 +25,9 @@ public class RefreshTokenRepositoryTest extends BaseIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @MockBean
+    private UserProducer userProducer;
 
 
     @Test

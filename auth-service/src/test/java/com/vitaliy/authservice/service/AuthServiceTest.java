@@ -5,9 +5,14 @@ import com.vitaliy.authservice.config.security.JwtService;
 import com.vitaliy.authservice.dto.response.AuthResponse;
 import com.vitaliy.authservice.dto.response.UserResponse;
 import com.vitaliy.authservice.exeption.EmailAlreadyExistsException;
+import com.vitaliy.authservice.kafka.UserProducer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.TestPropertySource;
 
 import static com.vitaliy.authservice.support.TestData.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -15,7 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
-public class AuthServiceTest  extends BaseIntegrationTest {
+@TestPropertySource(properties = {
+        "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration"
+})
+public class AuthServiceTest extends BaseIntegrationTest {
 
     @Autowired
     private AuthService authService;
@@ -23,6 +31,9 @@ public class AuthServiceTest  extends BaseIntegrationTest {
 
     @Autowired
     private JwtService jwtService;
+
+    @MockBean
+    private UserProducer userProducer;
 
 
     @Test
@@ -33,7 +44,6 @@ public class AuthServiceTest  extends BaseIntegrationTest {
 
         assertThat(response.getEmail())
                 .isEqualTo(EMAIL);
-
         assertThat(response.getRole())
                 .isEqualTo("USER");
     }
