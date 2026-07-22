@@ -31,6 +31,7 @@ public class OrderService {
     @Transactional
     public OrderResponse create(OrderRequest request, String userId) {
 
+        // Проверяем наличие товара
         for (OrderItemRequest item : request.getItems()) {
             boolean available = inventoryClient.checkStock(
                     item.getProductId(),
@@ -50,37 +51,55 @@ public class OrderService {
                 .totalAmount(BigDecimal.ZERO)
                 .build();
 
-        List<OrderItem> items = request.getItems().stream()
-                .map(i -> OrderItem.builder()
-                        .productId(i.getProductId())
-                        .productName(i.getProductName())
-                        .quantity(i.getQuantity())
-                        .price(i.getPrice())
-                        .order(order)
-                        .build())
-                .toList();
+        BigDecimal total = BigDecimal.ZERO;
 
-        order.setItems(items);
+        // Добавляем товары через managed collection Hibernate
+        for (OrderItemRequest itemRequest : request.getItems()) {
 
-        BigDecimal total = items.stream()
-                .map(i -> i.getPrice()
-                        .multiply(BigDecimal.valueOf(i.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            OrderItem item = OrderItem.builder()
+                    .productId(itemRequest.getProductId())
+                    .productName(itemRequest.getProductName())
+                    .quantity(itemRequest.getQuantity())
+                    .price(itemRequest.getPrice())
+                    .order(order)
+                    .build();
+
+            order.getItems().add(item);
+
+            total = total.add(
+                    itemRequest.getPrice()
+                            .multiply(BigDecimal.valueOf(itemRequest.getQuantity()))
+            );
+        }
 
         order.setTotalAmount(total);
 
+        // Первый save
         Order saved = repository.save(order);
 
+        // Резервируем товар
         for (OrderItemRequest item : request.getItems()) {
+
+            System.out.println(
+                    "RESERVING: "
+                            + item.getProductId()
+                            + " qty="
+                            + item.getQuantity()
+            );
+
             inventoryClient.reserveStock(
                     item.getProductId(),
                     item.getQuantity()
             );
         }
 
-        order.setStatus(OrderStatus.RESERVED);
-        saved = repository.save(order);
+        // Меняем статус.
+        System.out.println("SETTING STATUS RESERVED");
 
+        saved.setStatus(OrderStatus.RESERVED);
+
+        System.out.println(
+                "SAVED STATUS: " + saved.getStatus());
 
         orderProducer.sendOrderCreated(
                 OrderEvent.newBuilder()

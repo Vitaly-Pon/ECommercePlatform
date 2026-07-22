@@ -59,6 +59,12 @@ public class JwtService {
     }
 
     public String extractRole(String token) {
-        return parseClaims(token).get("role", String.class);
+        Object roles = parseClaims(token).get("roles");
+
+        if (roles instanceof java.util.List<?> list && !list.isEmpty()) {
+            return list.get(0).toString();
+        }
+
+        return null;
     }
 }

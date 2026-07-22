@@ -1,6 +1,8 @@
 package com.vitaliy.inventoryservice.grpc;
 
 import com.vitaliy.inventoryservice.domain.Inventory;  // ← твой доменный класс
+import com.vitaliy.inventoryservice.event.InventoryEvent;
+import com.vitaliy.inventoryservice.kafka.InventoryProducer;
 import com.vitaliy.inventoryservice.repository.InventoryRepository;
 import inventory.Inventory.StockRequest;
 import inventory.Inventory.StockResponse;
@@ -11,11 +13,15 @@ import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import net.devh.boot.grpc.server.service.GrpcService;
 
+import java.time.Instant;
+import java.util.UUID;
+
 @GrpcService
 @RequiredArgsConstructor
 public class InventoryGrpcService extends InventoryServiceGrpc.InventoryServiceImplBase {
 
     private final InventoryRepository repository;
+    private final InventoryProducer inventoryProducer;
 
     @Override
     public void checkStock(StockRequest request, StreamObserver<StockResponse> responseObserver) {
@@ -37,6 +43,14 @@ public class InventoryGrpcService extends InventoryServiceGrpc.InventoryServiceI
                     .orElseThrow(() -> new RuntimeException("Product not found"));
             inventory.reserve(request.getQuantity());
             repository.save(inventory);
+
+            inventoryProducer.sendReserved(InventoryEvent.newBuilder()
+                    .setReservationId(UUID.randomUUID().toString())
+                    .setProductId(request.getProductId())
+                    .setQuantity(request.getQuantity())
+                    .setStatus("RESERVED")
+                    .setTimestamp(Instant.now().toString())
+                    .build());
 
             responseObserver.onNext(ReserveResponse.newBuilder()
                     .setSuccess(true)
