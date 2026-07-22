@@ -30,11 +30,13 @@ public class GrpcInventoryClient {
         return stub.checkStock(request).getAvailable();
     }
 
-    public void reserveStock(String productId, int quantity) {
+    public boolean reserveStock(String productId, int quantity, long orderId, String reservationId) {
         Inventory.ReserveRequest request = Inventory.ReserveRequest.newBuilder()
                 .setProductId(productId)
                 .setQuantity(quantity)
+                .setOrderId(orderId)
+                .setReservationId(reservationId)
                 .build();
-        stub.reserveStock(request);
+        return stub.reserveStock(request).getSuccess();
     }
 }

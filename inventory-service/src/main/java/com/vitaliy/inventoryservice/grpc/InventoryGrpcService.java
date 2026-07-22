@@ -1,9 +1,11 @@
 package com.vitaliy.inventoryservice.grpc;
 
 import com.vitaliy.inventoryservice.domain.Inventory;  // ← твой доменный класс
+import com.vitaliy.inventoryservice.dto.InventoryResponse;
 import com.vitaliy.inventoryservice.event.InventoryEvent;
 import com.vitaliy.inventoryservice.kafka.InventoryProducer;
 import com.vitaliy.inventoryservice.repository.InventoryRepository;
+import com.vitaliy.inventoryservice.service.InventoryService;
 import inventory.Inventory.StockRequest;
 import inventory.Inventory.StockResponse;
 import inventory.Inventory.ReserveRequest;
@@ -22,6 +24,7 @@ public class InventoryGrpcService extends InventoryServiceGrpc.InventoryServiceI
 
     private final InventoryRepository repository;
     private final InventoryProducer inventoryProducer;
+    private final InventoryService inventoryService;
 
     @Override
     public void checkStock(StockRequest request, StreamObserver<StockResponse> responseObserver) {
@@ -39,15 +42,18 @@ public class InventoryGrpcService extends InventoryServiceGrpc.InventoryServiceI
     @Override
     public void reserveStock(ReserveRequest request, StreamObserver<ReserveResponse> responseObserver) {
         try {
-            Inventory inventory = repository.findByProductId(request.getProductId())
-                    .orElseThrow(() -> new RuntimeException("Product not found"));
-            inventory.reserve(request.getQuantity());
-            repository.save(inventory);
+            com.vitaliy.inventoryservice.dto.ReserveRequest dtoRequest =
+                    new com.vitaliy.inventoryservice.dto.ReserveRequest();
+            dtoRequest.setProductId(request.getProductId());
+            dtoRequest.setQuantity((int) request.getQuantity());
+
+            InventoryResponse response = inventoryService.reserve(dtoRequest);
 
             inventoryProducer.sendReserved(InventoryEvent.newBuilder()
-                    .setReservationId(UUID.randomUUID().toString())
+                    .setReservationId(request.getReservationId())
                     .setProductId(request.getProductId())
                     .setQuantity(request.getQuantity())
+                    .setOrderId(request.getOrderId())
                     .setStatus("RESERVED")
                     .setTimestamp(Instant.now().toString())
                     .build());

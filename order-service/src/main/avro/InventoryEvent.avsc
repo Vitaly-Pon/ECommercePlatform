@@ -3,25 +3,11 @@
   "name": "InventoryEvent",
   "namespace": "com.vitaliy.inventoryservice.event",
   "fields": [
-    {
-      "name": "reservationId",
-      "type": "string"
-    },
-    {
-      "name": "productId",
-      "type": "string"
-    },
-    {
-      "name": "quantity",
-      "type": "int"
-    },
-    {
-      "name": "status",
-      "type": "string"
-    },
-    {
-      "name": "timestamp",
-      "type": "string"
-    }
+    {"name": "reservationId", "type": "string"},
+    {"name": "orderId", "type": "long"},
+    {"name": "productId", "type": "string"},
+    {"name": "quantity", "type": "int"},
+    {"name": "status", "type": "string"},
+    {"name": "timestamp", "type": "string"}
   ]
 }

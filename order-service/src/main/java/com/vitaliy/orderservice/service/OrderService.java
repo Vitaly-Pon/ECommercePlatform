@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -77,30 +78,31 @@ public class OrderService {
         // Первый save
         Order saved = repository.save(order);
 
+        String reservationId = UUID.randomUUID().toString();
+
         // Резервируем товар
+        boolean allReserved = true;
         for (OrderItemRequest item : request.getItems()) {
-
-            System.out.println(
-                    "RESERVING: "
-                            + item.getProductId()
-                            + " qty="
-                            + item.getQuantity()
-            );
-
-            inventoryClient.reserveStock(
+            boolean reserved = inventoryClient.reserveStock(
                     item.getProductId(),
-                    item.getQuantity()
+                    item.getQuantity(),
+                    saved.getId(),
+                    reservationId
             );
+            if (!reserved) {
+                allReserved = false;
+                break;
+            }
         }
 
-        // Меняем статус.
-        System.out.println("SETTING STATUS RESERVED");
+        // Меняем статус только если все товары зарезервированы
+        if (allReserved) {
+            saved.setStatus(OrderStatus.RESERVED);
+        } else {
+            throw new RuntimeException("Failed to reserve all items");
+        }
 
-        saved.setStatus(OrderStatus.RESERVED);
-
-        System.out.println(
-                "SAVED STATUS: " + saved.getStatus());
-
+        // Отправка Kafka-события
         orderProducer.sendOrderCreated(
                 OrderEvent.newBuilder()
                         .setOrderId(saved.getId())
@@ -113,7 +115,6 @@ public class OrderService {
 
         return toResponse(saved);
     }
-
 
     @Transactional
     public OrderResponse updateStatus(Long id, String status) {
